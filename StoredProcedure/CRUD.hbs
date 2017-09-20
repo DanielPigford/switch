@@ -1,0 +1,238 @@
+USE {{Database.Name}}
+GO
+.
+{{#each Items}}
+-- ===============================================
+-- LoadByPrimaryKey
+-- ===============================================
+IF EXISTS (SELECT * FROM dbo.sysobjects WHERE id = OBJECT_ID(N'[{{Schema}}].[proc_{{Name}}LoadByPrimaryKey]') AND OBJECTPROPERTY(id,N'IsProcedure') = 1)
+    DROP PROCEDURE [{{Schema}}].[proc_{{Name}}LoadByPrimaryKey];
+GO
+.
+CREATE PROCEDURE [{{Schema}}].[proc_{{Name}}LoadByPrimaryKey]
+( 
+{{#each PrimaryKeys}}
+	@{{Alias}} {{DataTypeNameComplete}}{{xNotLast ","}}
+{{/each}}
+)
+AS
+BEGIN
+	SET NOCOUNT ON
+	DECLARE @Err int
+.
+	SELECT
+	{{#each Columns}}
+		[{{Name}}]{{xNotLast ","}}
+	{{/each}}
+	FROM 
+		[{{Schema}}].[{{Name}}]
+	WHERE
+	{{#each PrimaryKeys}}
+		[{{Name}}] = @{{Alias}}{{xNotLast " AND "}}
+	{{/each}}
+.
+	SET @Err = @@Error
+.
+	RETURN @Err
+END
+GO
+.
+-- Display the status of Proc creation
+IF (@@Error = 0) PRINT 'Procedure Creation: [{{Schema}}].[proc_{{Name}}LoadByPrimaryKey] Succeeded'
+ELSE PRINT 'Procedure Creation: [{{Schema}}].[proc_{{Name}}LoadByPrimaryKey] Error on Creation'
+GO 
+.
+-- ===============================================
+-- LoadAll
+-- ===============================================
+IF EXISTS (SELECT * FROM dbo.sysobjects WHERE id = OBJECT_ID(N'[{{Schema}}].[proc_{{Name}}LoadAll]') AND OBJECTPROPERTY(id,N'IsProcedure') = 1)
+    DROP PROCEDURE [{{Schema}}].[proc_{{Name}}LoadAll];
+GO
+.
+CREATE PROCEDURE [{{Schema}}].[proc_{{Name}}LoadAll]
+AS
+BEGIN
+.
+	SET NOCOUNT ON
+	DECLARE @Err int
+.
+	SELECT 
+	{{#each Columns}}
+		[{{Name}}]{{xNotLast ","}}
+	{{/each}}
+	FROM 
+		[{{Schema}}].[{{Name}}]
+.
+	SET @Err = @@Error
+.
+	RETURN @Err
+END
+GO
+.
+-- Display the status of Proc creation
+IF (@@Error = 0) PRINT 'Procedure Creation:[{{Schema}}].[proc_{{Name}}LoadAll] Succeeded'
+ELSE PRINT 'Procedure Creation:[{{Schema}}].[proc_{{Name}}LoadAll] Error on Creation'
+GO 
+.
+{{#xIf PrimaryKeys.Count ">=" 1}} {{! We can't do UPDATES or DELETES without a Primary Key}}
+
+{{#xIf PrimaryKeys.Count "!==" Columns.Count}} {{! Skip Many-to-Manys, You shouldn't update those }}
+-- ===============================================
+-- Update
+-- ===============================================
+{{xHashtable}} {{!Reset all variables}}
+
+IF EXISTS (SELECT * FROM dbo.sysobjects WHERE id = OBJECT_ID(N'[{{Schema}}].[proc_{{Name}}Update]') AND OBJECTPROPERTY(id,N'IsProcedure') = 1)
+    DROP PROCEDURE [{{Schema}}].[proc_{{Name}}Update];
+GO
+.
+CREATE PROCEDURE [{{Schema}}].[proc_{{Name}}Update]
+(
+{{#each Columns}}
+	@{{Alias}} {{DataTypeNameComplete}}{{#xIf IsNullable "===" true}} = NULL{{/xIf}}{{#xIf IsConcurrency "===" true}} = NULL OUTPUT{{/xIf}}{{xNotLast ","}}
+{{/each}}
+)
+AS
+BEGIN
+.
+	SET NOCOUNT OFF
+	DECLARE @Err int
+.
+	UPDATE
+		[{{Schema}}].[{{Name}}]
+	SET {{#each Columns}}
+			{{#xIfAll IsInPrimaryKey IsAutoKey IsComputed IsConcurrency "===" false}}
+		{{xHashtable "Comma"}}[{{Name}}] = @{{Alias}}{{xHashtable "Comma" ","}}
+			{{/xIfAll}}
+		{{/each}} 
+	WHERE 
+		{{#each Columns}}
+			{{#xIfAny IsConcurrency IsInPrimaryKey "===" true}}
+				{{#xIfAll IsConcurrency xSettings.Sql2005orLower "===" true}}
+		{{xHashtable "AND"}}TSEQUAL([{{Name}}],@{{Alias}})}
+				{{else}}
+		{{xHashtable "AND"}}[{{Name}}] = @{{Alias}}
+				{{/xIfAll}}
+				{{xHashtable "AND" " AND "}}
+			{{/xIfAny}}
+		{{/each}}
+.
+	SET @Err = @@Error
+	RETURN @Err
+END
+GO
+.
+-- Display the status of Proc creation
+IF (@@Error = 0) PRINT 'Procedure Creation: [{{Schema}}].[proc_{{Name}}Update] Succeeded'
+ELSE PRINT 'Procedure Creation: [{{Schema}}].[proc_{{Name}}Update] Error on Creation'
+GO 
+.
+{{/xIf}} {{! Skip Many-to-Manys }}
+-- ===============================================
+-- DELETE
+-- ===============================================
+{{xHashtable}} {{!Reset all variables}}
+
+IF EXISTS (SELECT * FROM dbo.sysobjects WHERE id = OBJECT_ID(N'[{{Schema}}].[proc_{{Name}}Delete]') AND OBJECTPROPERTY(id,N'IsProcedure') = 1)
+    DROP PROCEDURE [{{Schema}}].[proc_{{Name}}Delete];
+GO
+.
+CREATE PROCEDURE [{{Schema}}].[proc_{{Name}}Delete]
+(
+{{#each Columns}}
+	{{#xIfAny IsConcurrency IsInPrimaryKey "===" true}}
+	{{xHashtable "Comma"}}@{{Alias}} {{DataTypeNameComplete}}{{xHashtable "Comma" ","}}
+	{{/xIfAny}}	
+{{/each}}
+)
+AS
+BEGIN
+.
+	SET NOCOUNT OFF
+	DECLARE @Err int
+.
+	DELETE
+	FROM [{{Schema}}].[{{Name}}]
+	WHERE 
+		{{#each Columns}}
+			{{#xIfAny IsConcurrency IsInPrimaryKey "===" true}}
+				{{#xIfAll IsConcurrency xSettings.Sql2005orLower "===" true}}
+		{{xHashtable "AND"}}TSEQUAL([{{Name}}],@{{Alias}})}
+				{{else}}
+		{{xHashtable "AND"}}[{{Name}}] = @{{Alias}}
+				{{/xIfAll}}
+				{{xHashtable "AND" " AND "}}
+			{{/xIfAny}}
+		{{/each}}
+.
+	SET @Err = @@Error
+.
+	RETURN @Err
+END
+GO
+.
+-- Display the status of Proc creation
+IF (@@Error = 0) PRINT 'Procedure Creation: [{{Schema}}].[proc_{{Name}}Delete] Succeeded'
+ELSE PRINT 'Procedure Creation: [{{Schema}}].[proc_{{Name}}Delete] Error on Creation'
+GO
+{{/xIf}}
+
+-- ===============================================
+-- Insert
+-- ===============================================
+{{xHashtable}} {{!Reset all variables}}
+
+IF EXISTS (SELECT * FROM dbo.sysobjects WHERE id = OBJECT_ID(N'[{{Schema}}].[proc_{{Name}}Insert]') AND OBJECTPROPERTY(id,N'IsProcedure') = 1)
+    DROP PROCEDURE [{{Schema}}].[proc_{{Name}}Insert];
+GO
+.
+CREATE PROCEDURE [{{Schema}}].[proc_{{Name}}Insert]
+(
+{{#each Columns}}
+	@{{Alias}} {{DataTypeNameComplete}}{{#xIf IsNullable "===" true}} =  NULL{{/xIf}}{{#xIfAny IsAutoKey IsConcurrency "===" true}} = NULL OUTPUT{{/xIfAny}}{{xNotLast ","}}
+{{/each}}
+)
+AS
+BEGIN
+.
+	SET NOCOUNT OFF
+	DECLARE @Err int 
+.
+	INSERT
+	INTO [{{Schema}}].[{{Name}}]
+	(
+		{{#each Columns}}
+			{{#xIfNotAny IsAutoKey IsComputed IsConcurrency "===" true}}
+		{{xHashtable "Comma"}}[{{Name}}]{{xHashtable "Comma" ","}}
+			{{/xIfNotAny}}
+		{{/each}}
+	)
+    {{xHashtable "Comma" ""}}{{! Reset this variable}}
+	VALUES
+	(
+		{{#each Columns}}
+			{{#xIfNotAny IsAutoKey IsComputed IsConcurrency "===" true}}
+		{{xHashtable "Comma"}}@{{Alias}}{{xHashtable "Comma" ","}}
+			{{/xIfNotAny}}
+		{{/each}}
+	)
+.
+	{{#each Columns}}
+		{{#xIf IsAutoKey "===" true}}
+	SELECT @{{Alias}} = SCOPE_IDENTITY()
+		{{/xIf}}
+    {{/each}}
+.
+	SET @Err = @@Error
+.
+	RETURN @Err
+END
+GO
+.
+-- Display the status of Proc creation
+IF (@@Error = 0) PRINT 'Procedure Creation:  [{{Schema}}].[proc_{{Name}}Insert] Succeeded'
+ELSE PRINT 'Procedure Creation:  [{{Schema}}].[proc_{{Name}}Insert] Error on Creation'
+GO 
+{{/each}}
+
+{{xFile "All_Procedures" path=xSettings.OutputPath ext="sql"}}

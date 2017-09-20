@@ -1,0 +1,164 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html	xmlns="http://www.w3.org/1999/xhtml">
+<head>
+	<title>{{xRoot.Database.Name}}</title>
+.
+    <style type="text/css"> 
+.
+        table 
+        {
+	        font-family: verdana,arial,sans-serif;
+	        font-size:11px;
+	        color:#333333;
+	        border-width: 1px;
+	        border-color: #999999;
+	        border-collapse: collapse;
+	        border-radius: 6px;
+            -moz-border-radius: 6px;
+        }
+.
+        table th 
+        {
+	        background:#b5cfd2;
+	        border-width: 1px;
+	        padding: 8px;
+	        border-style: solid;
+	        border-color: #999999;
+        }
+.
+        table td 
+        {
+	        background:#dcddc0;
+	        border-width: 1px;
+	        padding: 8px;
+	        border-style: solid;
+	        border-color: #999999;
+        }
+.
+        h1, h2, h3, h4
+        {
+	        color:#1F88A7;
+        }
+.
+		hr
+		{
+			color:#b5cfd2;
+		}
+.
+    </style>
+.
+</head>
+.
+<body>
+.
+	<h1>
+		{{xRoot.Database.Name}}
+	</h1>
+.
+    {{! ===============================}}
+    {{! Table of Contents              }}
+    {{! ===============================}}
+	<a name="TOC"></a>
+	<h3>
+		Table of Contents</h3>
+	<ul>
+		<li>Tables:
+			<ol>
+				{{#each	Items}}
+				<li><a href="#{{FullName}}">{{FullName}}</a></li>
+				{{/each}}
+			</ol>
+		</li>
+	</ul>
+.
+    {{! =================================}}
+    {{! Lool through the Tables or Views }}
+    {{! =================================}}
+{{#each	Items}}
+	<a name="{{FullName}}"></a>
+	<hr	width="100%" />
+	<h1>{{FullName}}</h1>
+	<a href="#TOC">Table of Contents</a><br /><br />
+.
+	<strong>Columns</strong>
+	<table>
+		<tr>
+			<th>Name</th>
+			<th>Data Type</th>
+			<th>Primary Key</th>
+			<th>Nullable</th>
+			<th>Character Max Length</th>
+			<th>Numeric Precision</th>
+			<th>Numeric Scale</th>
+			<th>Auto Key</th>
+			<th>Concurrency</th>
+            <th>Default</th>
+		</tr>
+		{{#each	Columns}}
+		<tr>
+			<td><strong>{{Name}}</strong></td>
+			<td>{{DataTypeNameComplete}}</td>
+			<td>{{IsInPrimaryKey}}</td>
+			<td>{{IsNullable}}</td>
+			<td>{{CharacterMaxLength}}</td>
+			<td>{{NumericPrecision}}</td>
+			<td>{{NumericScale}}</td>
+			<td>{{IsAutoKey}}</td>
+			<td>{{IsConcurrency}}</td>
+            <td>{{Default}}</td>
+		</tr>
+		{{/each}}
+	</table>
+.
+    {{#xIf ForeignKeys.length ">" 0}}
+	<br />
+    <strong>Foreign Keys</strong>
+    <table>
+	    <tr>
+		    <th>Name</th>
+			<th>Primary Table</th>
+            <th>Primary Columns</th>
+            <th>Foriegn Table</th>
+		    <th>Foreign Columns</th>
+		    <th>Primary Key</th>
+	    </tr>
+        {{#each	ForeignKeys}}
+	    <tr>
+            <td><strong>{{Name}}</strong></td>
+			<td><a href="#{{PrimaryTable.FullName}}">{{PrimaryTable.Name}}</a></td>
+            <td>({{#each PrimaryColumns}}{{xNotFirst ', '}}{{Name}}{{/each}})</td>
+			<td><a href="#{{ForeignTable.FullName}}">{{ForeignTable.Name}}</a></td>			
+            <td>({{#each ForeignColumns}}{{xNotFirst ', '}}{{Name}}{{/each}})</td>
+            <td>{{PrimaryKeyName}}</td>
+	    </tr>
+        {{/each}}
+    </table>
+    {{/xIf}}
+.
+    {{#xIf Indexes.length ">" 0}}
+	<br />
+    <strong>Indexes</strong>
+    <table>
+	    <tr>
+		    <th>Name</th>
+			<th>Unique</th>
+            <th>Clustered</th>
+            <th>Columns</th>
+	    </tr>
+        {{#each	Indexes}}
+	    <tr>
+            <td><strong>{{Name}}</strong></td>
+            <td>{{Unique}}</td>
+            <td>{{Clustered}}</td>
+            <td>({{#each Columns}}{{xNotFirst ', '}}{{Name}}{{/each}})</td>
+	    </tr>
+        {{/each}}
+    </table>
+    <br />
+    {{/xIf}}
+.
+{{/each}}
+.
+</body>
+</html>
+{{xFile xRoot.Database.Name path=xSettings.OutputPath ext="html"}}
