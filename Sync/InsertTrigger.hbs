@@ -1,0 +1,36 @@
+-- switch    - TriggerInsertSync
+-- https://bitbucket.org/codeasaurus/switch
+-- Description  - The script below will generate a simple insert sync trigger to be used between two tables 
+--                in the same database or two different databases on the same server.  To sync across two
+--                separate servers requires a Linked Server configuration between to the two servers.
+--
+-- Instructions - Select table objects and generate.  Next replace or remove dbSrc and dbDest in the generated 
+--				  script with desired database names and adjust table names if required.
+--
+.
+{{#each Items}}
+{{!#xIf oType == 'Table'}}
+DROP TRIGGER [{{Name}}_Sync_Insert] 
+GO
+CREATE TRIGGER [{{Name}}_Sync_Insert] ON [{{Schema}}].[{{Name}}]
+ AFTER INSERT
+ NOT FOR REPLICATION AS
+BEGIN
+	IF (SELECT trigger_nestlevel() ) <= 1
+	BEGIN
+		SET IDENTITY_INSERT [dbDest].[{{Schema}}].[{{Name}}] ON
+.
+		INSERT INTO [dbDest].[{{Schema}}].[{{Name}}]
+				    ({{#each Columns}}{{xNotFirst ", "}}[{{Name}}]{{/each}})
+			 SELECT {{#each Columns}}{{xNotFirst ", "}}i.[{{Name}}]{{/each}}
+			   FROM [dbSrc].[{{Schema}}].[{{Name}}] s JOIN [Inserted] i 
+				 ON {{#each PrimaryKeys}}s.[{{Name}}] = i.[{{Name}}] {{xNotFirst " AND "}}{{/each}}
+.
+		SET IDENTITY_INSERT [dbDest].[{{Schema}}].[{{Name}}] OFF
+	END
+END
+GO
+.
+.
+{{!/xIf}}
+{{/each}}

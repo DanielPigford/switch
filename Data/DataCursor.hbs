@@ -1,0 +1,32 @@
+-- switch       - Cursor
+-- https://bitbucket.org/codeasaurus/switch
+-- Description  - The script below will generate a simple data cursor for the selected table or view
+--
+{{#each Items}}
+-- Declare column name variables
+{{#each Columns}}
+DECLARE @{{Name}} {{DataTypeNameComplete}}
+{{/each}}
+.
+-- Declare cursor for table/view data
+DECLARE cur_{{Name}}_Data CURSOR FOR 
+	SELECT {{#each Columns}}{{xNotFirst ", "}}[{{Name}}]{{/each}}  
+	FROM [{{Name}}]
+	  OPEN cur_{{Name}}_Data 
+	  FETCH NEXT FROM cur_{{Name}}_Data INTO {{#each Columns}}{{xNotFirst ", "}}@{{Name}}{{/each}}
+	  WHILE @@FETCH_STATUS = 0
+	  BEGIN
+.
+			-- Sample operation using PRINT
+	  		{{#each Columns}}
+			PRINT CONVERT(VARCHAR(50), @{{Name}})
+			{{/each}}
+.
+			-- Do work here
+.
+			FETCH NEXT FROM cur_{{Name}}_Data INTO {{#each Columns}}{{xNotFirst ", "}}@{{Name}}{{/each}}
+	  END
+CLOSE cur_{{Name}}_Data 
+DEALLOCATE cur_{{Name}}_Data 
+{{/each}}
+.

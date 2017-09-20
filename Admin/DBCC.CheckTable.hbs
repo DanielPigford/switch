@@ -1,0 +1,9 @@
+-- switch       - DBCC.CheckTable
+-- https://bitbucket.org/codeasaurus/switch
+-- Description  - Basic DBCC CheckTable to verify table data integrity
+--
+.
+{{#each Items}}
+DBCC CHECKTABLE ('{{Schema}}.{{Name}}')
+{{/each}}
+GO

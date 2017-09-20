@@ -1,0 +1,100 @@
+-- switch       - ArchiveData
+-- https://bitbucket.org/codeasaurus/switch
+-- Description  - Template to generate data archive tsql scripts for SQL Server
+--
+USE cldbConnectTestArchive
+GO
+.
+{{#each Items}}
+DROP PROCEDURE [dbo].[arc_Archive{{Name}}]
+GO
+.
+CREATE PROCEDURE [dbo].[arc_Archive{{Name}}]
+AS
+BEGIN
+	-- Bring archive data back to live if FileNo is present in GRIPSS-Workload
+	-- Delete from Arhive the source records that were archived
+	-- Archive data from live if FileNo is not present in GRIPSS-Workload
+	-- Delete from live the source records that were restored
+.
+	DECLARE @LastCount INT
+	DECLARE @ArchiveLogId INT
+	EXEC [sproc_ArchiveLogStart] '{{Name}}', 'arc_Archive{{Name}}', @ArchiveLogId=@ArchiveLogId OUTPUT
+.
+	BEGIN TRY
+.
+		BEGIN TRY
+		SET IDENTITY_INSERT [cldbConnectTest].[dbo].[{{Name}}] ON
+		END TRY
+		BEGIN CATCH
+		END CATCH
+.
+		INSERT INTO [cldbConnectTest].[dbo].[{{Name}}]
+				   ({{#each Columns}}{{xNotFirst ", "}}[{{Name}}]{{/each}})
+				SELECT {{#each Columns}}{{xNotFirst ", "}}[{{Name}}]{{/each}}
+				  FROM [cldbConnectTestArchive].[dbo].[{{Name}}]
+				WHERE FileNo IN (SELECT FileNo FROM ResourceData.dbo.[GRIPSS-Workload] GROUP BY FileNo)	  
+.
+		SELECT @LastCount = @@ROWCOUNT
+.
+		BEGIN TRY
+		SET IDENTITY_INSERT [cldbConnectTest].[dbo].[{{Name}}] OFF
+		END TRY
+		BEGIN CATCH
+		END CATCH
+.
+		EXEC [sproc_ArchiveLogCount] @ArchiveLogId, @RestoreCount=@LastCount
+.
+		DELETE [cldbConnectTestArchive].[dbo].[{{Name}}]
+		WHERE FileNo IN (SELECT FileNo FROM ResourceData.dbo.[GRIPSS-Workload] GROUP BY FileNo)	  
+.
+		SELECT @LastCount = @@ROWCOUNT
+		EXEC [sproc_ArchiveLogCount] @ArchiveLogId, @ArchivePurgeCount=@LastCount
+.
+		BEGIN TRY
+		SET IDENTITY_INSERT [cldbConnectTestArchive].[dbo].[{{Name}}] ON
+		END TRY
+		BEGIN CATCH
+		END CATCH
+.
+		INSERT INTO [cldbConnectTestArchive].[dbo].[{{Name}}]
+				   ({{#each Columns}}{{xNotFirst ", "}}[{{Name}}]{{/each}})
+				SELECT {{#each Columns}}{{xNotFirst ", "}}[{{Name}}]{{/each}}
+				  FROM [cldbConnectTest].[dbo].[{{Name}}]
+				WHERE FileNo NOT IN (SELECT FileNo FROM ResourceData.dbo.[GRIPSS-Workload] GROUP BY FileNo)	  
+.
+		SELECT @LastCount = @@ROWCOUNT
+.
+		BEGIN TRY
+		SET IDENTITY_INSERT [cldbConnectTestArchive].[dbo].[{{Name}}] OFF
+		END TRY
+		BEGIN CATCH
+		END CATCH
+.
+		EXEC [sproc_ArchiveLogCount] @ArchiveLogId, @ArchiveCount=@LastCount
+.
+		DELETE [cldbConnectTest].[dbo].[{{Name}}]
+		WHERE FileNo NOT IN (SELECT FileNo FROM ResourceData.dbo.[GRIPSS-Workload] GROUP BY FileNo)	  
+.
+		SELECT @LastCount = @@ROWCOUNT
+		EXEC [sproc_ArchiveLogCount] @ArchiveLogId, @LivePurgeCount=@LastCount
+.
+		EXEC [sproc_ArchiveLogMessage] @ArchiveLogId, NULL, 'Success'
+.
+	END TRY
+.
+	BEGIN CATCH
+		DECLARE @Message VARCHAR(1000)
+		SELECT @Message = ERROR_PROCEDURE() + ':' + CONVERT(VARCHAR(10), ERROR_LINE()) + ':' + ERROR_MESSAGE()
+		EXEC [sproc_ArchiveLogMessage] @ArchiveLogId, @Message, 'Error'
+	END CATCH
+.
+	EXEC [sproc_ArchiveLogStop] @ArchiveLogId 
+END
+GO
+{{/each}}
+.
+{{#each Items}}
+EXEC [arc_Archive{{Name}}]
+GO
+{{/each}}

@@ -1,0 +1,7 @@
+-- switch
+-- https://bitbucket.org/codeasaurus/switch
+-- Warning - the script below will remove all data from the tables referenced.
+{{#each Items}}
+TRUNCATE TABLE [{{Schema}}].[{{Name}}]
+{{/each}}
+GO

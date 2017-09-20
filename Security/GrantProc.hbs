@@ -1,0 +1,7 @@
+-- switch
+-- https://bitbucket.org/codeasaurus/switch
+-- Information - following generation use replace to change public to the desired SQL role
+{{#each Items}}
+GRANT EXEC ON [{{Schema}}].[{{Name}}] TO PUBLIC 
+{{/each}}
+GO

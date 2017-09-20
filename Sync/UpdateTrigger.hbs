@@ -1,0 +1,34 @@
+-- TweakTSQL    - TriggerUpdateSync
+-- https://bitbucket.org/codeasaurus/switch
+-- Description  - The script below will generate a simple update sync trigger to be used between two tables
+--                in the same database or two different databases on the same server.  To sync across two
+--                separate servers requires a Linked Server configuration between to the two servers.
+--
+-- Instructions - Select table objects and generate.  Next replace or remove dbSrc and dbDest in the generated 
+--				  script with desired database names and adjust table names if required.
+--
+.
+{{#each Items}}
+{{!#xIf oType == 'Table'}}
+DROP TRIGGER [{{Name}}_Sync_Update] 
+GO
+CREATE TRIGGER [{{Name}}_Sync_Update] ON [{{Schema}}].[{{Name}}]
+ AFTER UPDATE
+ NOT FOR REPLICATION AS
+BEGIN
+	IF (SELECT trigger_nestlevel() ) <= 1
+	BEGIN
+.
+		UPDATE t
+		   SET {{#each Columns}}{{xNotFirst ", "}}[{{Name}}] = i.[{{Name}}]{{/each}}  
+		  FROM [dbDest].[{{Schema}}].[{{Name}}] t, [dbSrc].[{{Schema}}].[{{Name}}] s JOIN [Inserted] i
+			ON {{#each PrimaryKeys}}s.[{{Name}}] = i.[{{Name}}] {{xNotFirst " AND "}}{{/each}}
+		 WHERE {{#each PrimaryKeys}}t.[{{Name}}] = s.[{{Name}}] {{xNotFirst " AND "}}{{/each}}
+.
+	END
+END
+GO
+.
+.
+{{!/xIf}}
+{{/each}}
