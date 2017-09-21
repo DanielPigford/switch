@@ -1,3 +1,26 @@
 -- switch       - TriggerUpdateSync
 -- https://bitbucket.org/codeasaurus/switch
-Test Commit. -JD
+
+--NOTE: Replace 'CFR_TABLE_NAME_HERE' with actual CFR table name
+.
+{{#each Items}}
+CREATE TRIGGER [dbo].[trig_insert_{{Name}}] 
+   ON  [dbo].[{{Name}}] 
+   AFTER INSERT
+AS 
+BEGIN
+{{#each Columns}}
+	{{#xIfNotAny IsComputed IsConcurrency IsAutoKey IsInPrimaryKey "===" true}}
+		INSERT INTO CFR_TABLE_NAME_HERE (fldRowKeyId, fldCustomFieldName, fldValue)
+		SELECT i.fldRowId, '{{Name}}', CONVERT(NVARCHAR(50), i.{{Name}})
+		FROM inserted i
+		WHERE i.{{Name}} IS NOT NULL
+	{{/xIfNotAny}}
+.
+{{/each}}
+.
+	SET NOCOUNT ON;
+.
+END
+{{/each}}
+.
