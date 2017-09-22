@@ -1,2 +1,26 @@
 -- switch       - CFR_InsertTrigger
 -- https://bitbucket.org/codeasaurus/switch
+
+--NOTE: Replace 'CFR_TABLE_NAME_HERE' with actual CFR table name
+.
+{{#each Items}}
+CREATE TRIGGER [dbo].[trig_update_{{Name}}] 
+   ON  [dbo].[{{Name}}] 
+   FOR UPDATE
+AS 
+BEGIN
+{{#each Columns}}
+	{{#xIfNotAny IsComputed IsConcurrency IsAutoKey IsInPrimaryKey "===" true}}
+		UPDATE CFR_TABLE_NAME_HERE 
+		SET fldValue = CONVERT(NVARCHAR(50), i.fld{{Name}})
+		FROM CFR_TABLE_NAME_HERE cfr INNER JOIN inserted i ON cfr.fldRowKeyID = i.fldRowID
+		WHERE ISNULL(cfr.fldValue, '') <> ISNULL(i.fld{{Name}}, '') AND fldCustomFieldName = 'fld{{Name}}'
+	{{/xIfNotAny}}
+.
+{{/each}}
+.
+	SET NOCOUNT ON;
+.
+END
+{{/each}}
+.

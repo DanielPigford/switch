@@ -12,9 +12,9 @@ BEGIN
 {{#each Columns}}
 	{{#xIfNotAny IsComputed IsConcurrency IsAutoKey IsInPrimaryKey "===" true}}
 		INSERT INTO CFR_TABLE_NAME_HERE (fldRowKeyId, fldCustomFieldName, fldValue)
-		SELECT i.fldRowId, '{{Name}}', CONVERT(NVARCHAR(50), i.{{Name}})
+		SELECT i.fldRowId, 'fld{{Name}}', CONVERT(NVARCHAR(50), i.fld{{Name}})
 		FROM inserted i
-		WHERE i.{{Name}} IS NOT NULL
+		WHERE i.fld{{Name}} IS NOT NULL
 	{{/xIfNotAny}}
 .
 {{/each}}
