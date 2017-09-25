@@ -2,3 +2,18 @@
 -- https://bitbucket.org/codeasaurus/switch
 -- Description  - Template to generate a SQL Server MakeTable from View script similar to MSAccess MakeTable
 --
+
+--CREATE TABLE
+{{#each Items}}	
+CREATE TABLE [DATABASE].[SCHEMA].[tbl{{Name}}](
+	{{#each Columns}}[{{Name}}] [{{DataTypeNameComplete}}] {{#xIf IsNullable "===" true}}NULL{{else}}NOT NULL{{/xIf}} {{xNotLast ","}}
+	{{/each}})
+{{/each}}
+
+--FILL TABLE
+{{#each Items}}			
+INSERT INTO [DATEBASE_NAME].[SCHEMA].[TABLE_NAME]
+		   ({{#each Columns}}{{xNotFirst ", "}}[{{Name}}]{{/each}})
+		SELECT {{#each Columns}}{{xNotFirst ", "}}[{{Name}}]{{/each}}
+		  FROM [{{Database.Name}}].[{{Schema}}].[{{Name}}]
+{{/each}}
