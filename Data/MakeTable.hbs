@@ -15,8 +15,10 @@ CREATE TABLE [DATABASE_NAME].[SCHEMA].[tbl{{Name}}](
 {{#each Items}}			
 INSERT INTO [DATEBASE_NAME].[SCHEMA].[DESTINATION_NAME]
 		   ({{#each Columns}}{{xNotFirst ", "}}[{{Name}}]{{/each}})
-		SELECT {{#each Columns}}{{xNotFirst ", "}}[{{Name}}]{{/each}}
-			FROM [{{Database.Name}}].[{{Schema}}].[{{Name}}]
+		SELECT {{#each Columns}}{{xNotFirst ", "}}s.[{{Name}}]{{/each}}
+			FROM [{{Database.Name}}].[{{Schema}}].[{{Name}}] s 
+				LEFT JOIN [DATEBASE_NAME].[SCHEMA].[DESTINATION_NAME] d ON s.RowID = d.RowID
+			WHERE s.LastUpdate > @LastSyncDate AND d.RowID IS NULL
 .
 {{/each}}
 
@@ -30,5 +32,18 @@ SET
 FROM [DATEBASE_NAME].[SCHEMA].[DESTINATION_NAME] d 
 	INNER JOIN [{{Database.Name}}].[{{Schema}}].[{{Name}}] s
 		ON d.RowID = s.RowID
+.
+{{/each}}
+
+--DELETE ROWS
+{{#each Items}}			
+DELETE FROM [DATEBASE_NAME].[SCHEMA].[DESTINATION_NAME]
+WHERE RowID IN (
+	SELECT d.RowID
+	FROM [{{Database.Name}}].[{{Schema}}].[{{Name}}] s 
+		RIGHT JOIN [DATEBASE_NAME].[SCHEMA].[DESTINATION_NAME] d ON s.RowID = d.RowID
+	WHERE s.RowID IS NULL
+	AND d.LastUpdate > @LastSyncDate
+)
 .
 {{/each}}
