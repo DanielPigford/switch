@@ -5,58 +5,63 @@
     {{#each Items}}			
     USE EDAProjectManagement
     GO
-    .
-    DECLARE @LastSyncDate DATETIME
-    .
-    --CREATE THE SYNC DATE ROW IF IT DOES NOT EXIST
+.
+	--SELECT * FROM tblLastTableSyncDate;
+	--SELECT * FROM [DATEBASE_NAME].[SCHEMA].[DESTINATION_NAME]
+	DECLARE @LastSyncDate DATETIME
+.
+	--CREATE THE SYNC DATE ROW IF IT DOES NOT EXIST
     IF (0 = (SELECT COUNT(*) FROM tblLastTableSyncDate WHERE fldSourceTableName = '{{Name}}'))
     BEGIN
         INSERT INTO tblLastTableSyncDate (fldSourceTableName, fldLastSyncDate)
         VALUES ('{{Name}}', '1970-1-1')
     END;
-    .
-    .
-    SELECT TOP 1 @LastSyncDate = COALESCE(fldLastSyncDate, '1970-1-1') 
+.
+.
+	SELECT TOP 1 @LastSyncDate = COALESCE(fldLastSyncDate, '1970-1-1') 
     FROM tblLastTableSyncDate
     WHERE fldSourceTableName = '{{Name}}';
-    .
-    .
-    --	   Source ==>	[{{Database.Name}}].[{{Schema}}].[{{Name}}]
+.
+.
+	--	   Source ==>	[{{Database.Name}}].[{{Schema}}].[{{Name}}]
     --Destination ==>	[DATEBASE_NAME].[SCHEMA].[DESTINATION_NAME]
-    .
-    -- INSERT DATA INTO [DATEBASE_NAME].[SCHEMA].[DESTINATION_NAME] WHERE PRIMARY KEY VALUES DO NOT ALREADY EXIST.
+.
+	-- INSERT DATA INTO [DATEBASE_NAME].[SCHEMA].[DESTINATION_NAME] WHERE PRIMARY KEY VALUES DO NOT ALREADY EXIST.
     INSERT INTO [DATEBASE_NAME].[SCHEMA].[DESTINATION_NAME]
             ({{#each Columns}}{{xNotFirst ", "}}[{{Name}}]{{/each}})
             SELECT {{#each Columns}}{{xNotFirst ", "}}s.[{{Name}}]{{/each}}
                 FROM [{{Database.Name}}].[{{Schema}}].[{{Name}}] s 
                     LEFT JOIN [DATEBASE_NAME].[SCHEMA].[DESTINATION_NAME] d ON s.RowID = d.RowID
                 WHERE s.LastUpdate > @LastSyncDate AND d.RowID IS NULL
-    .
-    .
-    -- UPDATE DATA IN [DATEBASE_NAME].[SCHEMA].[DESTINATION_NAME] WHERE PRIMARY KEY VALUES MATCH
+.
+.
+	-- UPDATE DATA IN [DATEBASE_NAME].[SCHEMA].[DESTINATION_NAME] WHERE PRIMARY KEY VALUES MATCH
     UPDATE [DATEBASE_NAME].[SCHEMA].[DESTINATION_NAME]
     SET
-        {{#each Columns}}{{Name}} = s.{{Name}}{{xNotLast ", "}}
+        {{#each Columns}}[{{Name}}] = s.[{{Name}}]{{xNotLast ", "}}
         {{/each}}
     FROM [DATEBASE_NAME].[SCHEMA].[DESTINATION_NAME] d 
         INNER JOIN [{{Database.Name}}].[{{Schema}}].[{{Name}}] s
             ON d.RowID = s.RowID
     WHERE s.LastUpdate > @LastSyncDate
-    .
-    .
-    -- DELETE DATA FROM [DATEBASE_NAME].[SCHEMA].[DESTINATION_NAME] WHERE PRIMARY KEY VALUE DOES NOT EXIST IN SOURCE TABLE
+.
+.
+	-- DELETE DATA FROM [DATEBASE_NAME].[SCHEMA].[DESTINATION_NAME] WHERE PRIMARY KEY VALUE DOES NOT EXIST IN SOURCE TABLE
     DELETE FROM [DATEBASE_NAME].[SCHEMA].[DESTINATION_NAME]
     WHERE RowID IN (
         SELECT d.RowID
         FROM [{{Database.Name}}].[{{Schema}}].[{{Name}}] s 
             RIGHT JOIN [DATEBASE_NAME].[SCHEMA].[DESTINATION_NAME] d ON s.RowID = d.RowID
         WHERE s.RowID IS NULL
-        AND d.LastUpdate > @LastSyncDate
     )
-    .
-    .
-    --UPDATE LastSyncDate TO THE CURRENT DATE FOR {{Name}}
+.
+.
+	--UPDATE LastSyncDate TO THE CURRENT DATE FOR {{Name}}
     UPDATE tblLastTableSyncDate
         SET fldLastSyncDate = GETDATE()
         WHERE fldSourceTableName = '{{Name}}';
     {{/each}}
+.
+.
+	--SELECT * FROM tblLastTableSyncDate;
+	--SELECT * FROM [DATEBASE_NAME].[SCHEMA].[DESTINATION_NAME]
