@@ -2,9 +2,15 @@
 -- https://bitbucket.org/codeasaurus/switch
 -- Description  - Template to generate a SQL Server one way script to push table data to DMZ.
 --
-    {{#each Items}}			
-    USE EDAProjectManagement
-    GO
+    {{#each Items}}	
+IF  EXISTS (SELECT * FROM sys.objects WHERE object_id = OBJECT_ID(N'[dbo].[spPushPM2Connect_{{Name}}]') AND type in (N'P', N'PC'))
+DROP PROCEDURE [dbo].[spPushPM2Connect_{{Name}}]
+GO
+
+	
+CREATE PROCEDURE spPushPM2Connect_{{Name}}
+AS
+BEGIN
 .
 	--SELECT * FROM tblLastTableSyncDate;
 	--SELECT * FROM [DATEBASE_NAME].[SCHEMA].[DESTINATION_NAME]
@@ -31,8 +37,8 @@
             ({{#each Columns}}{{xNotFirst ", "}}[{{Name}}]{{/each}})
             SELECT {{#each Columns}}{{xNotFirst ", "}}s.[{{Name}}]{{/each}}
                 FROM [{{Database.Name}}].[{{Schema}}].[{{Name}}] s 
-                    LEFT JOIN [DATEBASE_NAME].[SCHEMA].[DESTINATION_NAME] d ON s.RowID = d.RowID
-                WHERE s.LastUpdate > @LastSyncDate AND d.RowID IS NULL
+                    LEFT JOIN [DATEBASE_NAME].[SCHEMA].[DESTINATION_NAME] d ON s.fldRowID = d.fldRowID
+                WHERE s.fldLastUpdate > @LastSyncDate AND d.fldRowID IS NULL
 .
 .
 	-- UPDATE DATA IN [DATEBASE_NAME].[SCHEMA].[DESTINATION_NAME] WHERE PRIMARY KEY VALUES MATCH
@@ -42,17 +48,17 @@
         {{/each}}
     FROM [DATEBASE_NAME].[SCHEMA].[DESTINATION_NAME] d 
         INNER JOIN [{{Database.Name}}].[{{Schema}}].[{{Name}}] s
-            ON d.RowID = s.RowID
-    WHERE s.LastUpdate > @LastSyncDate
+            ON d.fldRowID = s.fldRowID
+    WHERE s.fldLastUpdate > @LastSyncDate
 .
 .
 	-- DELETE DATA FROM [DATEBASE_NAME].[SCHEMA].[DESTINATION_NAME] WHERE PRIMARY KEY VALUE DOES NOT EXIST IN SOURCE TABLE
     DELETE FROM [DATEBASE_NAME].[SCHEMA].[DESTINATION_NAME]
-    WHERE RowID IN (
-        SELECT d.RowID
+    WHERE fldRowID IN (
+        SELECT d.fldRowID
         FROM [{{Database.Name}}].[{{Schema}}].[{{Name}}] s 
-            RIGHT JOIN [DATEBASE_NAME].[SCHEMA].[DESTINATION_NAME] d ON s.RowID = d.RowID
-        WHERE s.RowID IS NULL
+            RIGHT JOIN [DATEBASE_NAME].[SCHEMA].[DESTINATION_NAME] d ON s.fldRowID = d.fldRowID
+        WHERE s.fldRowID IS NULL
     )
 .
 .
@@ -65,3 +71,5 @@
 .
 	--SELECT * FROM tblLastTableSyncDate;
 	--SELECT * FROM [DATEBASE_NAME].[SCHEMA].[DESTINATION_NAME]
+END
+GO
