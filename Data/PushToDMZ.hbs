@@ -16,7 +16,6 @@
 {{! }                                                             }}
 {{!===============================================================}}
 .
-.
 USE [{{xRoot.Items.[0].Database.Name}}]
 GO
 .
@@ -55,8 +54,7 @@ BEGIN
             SELECT {{#each Columns}}{{xNotFirst ", "}}s.[{{Name}}]{{/each}}
                 FROM [{{Database.Name}}].[{{Schema}}].[{{Name}}] s 
                     LEFT JOIN [{{xSettings.TargetDatabaseName}}].[{{xSettings.TargetSchemaName}}].[{{xSettings.TargetTablePrefix}}{{Name}}] d ON s.fldRowID = d.fldRowID
-				WHERE AND d.fldRowID IS NULL
-                --WHERE s.[{{xSettings.LastSyncDateColumnName}}] > @LastSyncDate -- Not needed for inserts
+				WHERE d.fldRowID IS NULL
 .
 .
 	-- UPDATE DATA IN [{{xSettings.TargetServerName}}].[{{xSettings.TargetDatabaseName}}].[{{xSettings.TargetSchemaName}}].[{{xSettings.TargetTablePrefix}}{{Name}}] WHERE PRIMARY KEY VALUES MATCH
