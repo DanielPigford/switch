@@ -12,7 +12,7 @@
 {{!     "TargetSchemaName": "dbo",                                }}
 {{!     "TargetTablePrefix": "tbl",                               }}
 {{! 	"LastSyncTableName": "tblLastTableSyncDate",              }}
-{{! 	"LastSyncDateColumnName": "fldLastUpdate"                 }}
+{{! 	"LastSyncDateColumnName": "LastUpdate"                    }}
 {{! }                                                             }}
 {{!===============================================================}}
 .
@@ -54,7 +54,7 @@ BEGIN
             SELECT {{#each Columns}}{{xNotFirst ", "}}s.[{{Name}}]{{/each}}
                 FROM [{{Database.Name}}].[{{Schema}}].[{{Name}}] s 
                     LEFT JOIN [{{xSettings.TargetDatabaseName}}].[{{xSettings.TargetSchemaName}}].[{{xSettings.TargetTablePrefix}}{{Name}}] d ON s.fldRowID = d.fldRowID
-				WHERE d.fldRowID IS NULL
+				WHERE d.RowID IS NULL
 .
 .
 	-- UPDATE DATA IN [{{xSettings.TargetServerName}}].[{{xSettings.TargetDatabaseName}}].[{{xSettings.TargetSchemaName}}].[{{xSettings.TargetTablePrefix}}{{Name}}] WHERE PRIMARY KEY VALUES MATCH
@@ -64,17 +64,17 @@ BEGIN
         {{/each}}
     FROM [{{xSettings.TargetServerName}}].[{{xSettings.TargetDatabaseName}}].[{{xSettings.TargetSchemaName}}].[{{xSettings.TargetTablePrefix}}{{Name}}] d 
         INNER JOIN [{{Database.Name}}].[{{Schema}}].[{{Name}}] s
-            ON d.fldRowID = s.fldRowID
+            ON d.RowID = s.RowID
     WHERE s.[{{xSettings.LastSyncDateColumnName}}] > @LastSyncDate
 .
 .
 	-- DELETE DATA FROM [{{xSettings.TargetServerName}}].[{{xSettings.TargetDatabaseName}}].[{{xSettings.TargetSchemaName}}].[{{xSettings.TargetTablePrefix}}{{Name}}] WHERE PRIMARY KEY VALUE DOES NOT EXIST IN SOURCE TABLE
     DELETE FROM [{{xSettings.TargetServerName}}].[{{xSettings.TargetDatabaseName}}].[{{xSettings.TargetSchemaName}}].[{{xSettings.TargetTablePrefix}}{{Name}}]
-    WHERE fldRowID IN (
-        SELECT d.fldRowID
+    WHERE RowID IN (
+        SELECT d.RowID
         FROM [{{Database.Name}}].[{{Schema}}].[{{Name}}] s 
             RIGHT JOIN [{{xSettings.TargetServerName}}].[{{xSettings.TargetDatabaseName}}].[{{xSettings.TargetSchemaName}}].[{{xSettings.TargetTablePrefix}}{{Name}}] d ON s.fldRowID = d.fldRowID
-        WHERE s.fldRowID IS NULL
+        WHERE s.RowID IS NULL
     )
 .
 .
