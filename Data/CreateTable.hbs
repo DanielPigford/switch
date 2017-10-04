@@ -1,0 +1,50 @@
+-- switch       - CreateTable
+-- https://bitbucket.org/codeasaurus/switch
+-- Description  - Template to generate a SQL Server CreateTable and CreateView from Table or View source object 
+--
+
+{{!===============================================================}}
+{{! {                                                             }}
+{{!  "OutputPath": "C:\\M2G\\switch\\",                           }}
+{{!  "TargetDatabaseName": "EDAProjectManagement",                }}
+{{!  "TargetSchemaName": "dbo",                                    }}
+{{!  "TargetTablePrefix": "tbl"                                    }}
+{{! }                                                             }}
+{{!===============================================================}}
+
+.
+{{#each Items}}	
+USE [{{xSettings.TargetDatabaseName}}]
+GO
+.
+--DROP TABLE
+BEGIN TRY
+DROP TABLE [{{xSettings.TargetSchemaName}}].[{{xSettings.TargetTablePrefix}}{{Name}}];
+END TRY
+BEGIN CATCH
+END CATCH
+GO
+.
+--CREATE TABLE
+CREATE TABLE [{{xSettings.TargetSchemaName}}].[{{xSettings.TargetTablePrefix}}{{Name}}](
+	{{#each Columns}}[{{Name}}] {{DataTypeNameComplete}} {{#xIf IsNullable "===" true}}NULL{{else}}NOT NULL{{/xIf}} {{xNotLast ","}}
+	{{/each}});
+GO
+.
+--DROP VIEW
+BEGIN TRY
+DROP VIEW [{{xSettings.TargetSchemaName}}].[{{Name}}];
+END TRY
+BEGIN CATCH
+END CATCH
+GO
+.
+--CREATE VIEW
+CREATE VIEW [{{xSettings.TargetSchemaName}}].[{{Name}}]
+AS
+	SELECT {{#each Columns}}{{xNotFirst ", "}}[{{Name}}]{{/each}}
+		FROM [{{Database.Name}}].[{{Schema}}].[{{xSettings.TargetTablePrefix}}{{Name}}]; 
+.
+.
+{{/each}}
+
