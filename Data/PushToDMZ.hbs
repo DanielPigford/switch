@@ -2,24 +2,27 @@
 -- https://bitbucket.org/codeasaurus/switch
 -- Description  - Template to generate a SQL Server one way script to push table data to DMZ.
 --
-    {{#each Items}}	
+.
+USE [{{xRoot.Items.[0].Database.Name}}]
+GO
+.
+{{#each Items}}	
 IF  EXISTS (SELECT * FROM sys.objects WHERE object_id = OBJECT_ID(N'[dbo].[spPushPM2Connect_{{Name}}]') AND type in (N'P', N'PC'))
 DROP PROCEDURE [dbo].[spPushPM2Connect_{{Name}}]
 GO
-
-	
+.
 CREATE PROCEDURE spPushPM2Connect_{{Name}}
 AS
 BEGIN
 .
 	--SELECT * FROM tblLastTableSyncDate;
-	--SELECT * FROM [DATEBASE_NAME].[SCHEMA].[DESTINATION_NAME]
+	--SELECT * FROM [{{xSettings.TargetServerName}}].[{{xSettings.TargetDatabaseName}}].[{{xSettings.TargetSchemaName}}].[{{xSettings.TargetTablePrefix}}{{Name}}]
 	DECLARE @LastSyncDate DATETIME
 .
 	--CREATE THE SYNC DATE ROW IF IT DOES NOT EXIST
     IF (0 = (SELECT COUNT(*) FROM tblLastTableSyncDate WHERE fldSourceTableName = '{{Name}}'))
     BEGIN
-        INSERT INTO tblLastTableSyncDate (fldSourceTableName, fldLastSyncDate)
+        INSERT INTO [{{xSettings.LastSyncTableName}}] (fldSourceTableName, fldLastSyncDate)
         VALUES ('{{Name}}', '1970-1-1')
     END;
 .
@@ -30,34 +33,35 @@ BEGIN
 .
 .
 	--	   Source ==>	[{{Database.Name}}].[{{Schema}}].[{{Name}}]
-    --Destination ==>	[DATEBASE_NAME].[SCHEMA].[DESTINATION_NAME]
+    --Destination ==>	[{{xSettings.TargetServerName}}].[{{xSettings.TargetDatabaseName}}].[{{xSettings.TargetSchemaName}}].[{{xSettings.TargetTablePrefix}}{{Name}}]
 .
-	-- INSERT DATA INTO [DATEBASE_NAME].[SCHEMA].[DESTINATION_NAME] WHERE PRIMARY KEY VALUES DO NOT ALREADY EXIST.
-    INSERT INTO [DATEBASE_NAME].[SCHEMA].[DESTINATION_NAME]
+	-- INSERT DATA INTO [{{xSettings.TargetServerName}}].[{{xSettings.TargetDatabaseName}}].[{{xSettings.TargetSchemaName}}].[{{xSettings.TargetTablePrefix}}{{Name}}] WHERE PRIMARY KEY VALUES DO NOT ALREADY EXIST.
+    INSERT INTO [{{xSettings.TargetServerName}}].[{{xSettings.TargetDatabaseName}}].[{{xSettings.TargetSchemaName}}].[{{xSettings.TargetTablePrefix}}{{Name}}]
             ({{#each Columns}}{{xNotFirst ", "}}[{{Name}}]{{/each}})
             SELECT {{#each Columns}}{{xNotFirst ", "}}s.[{{Name}}]{{/each}}
                 FROM [{{Database.Name}}].[{{Schema}}].[{{Name}}] s 
-                    LEFT JOIN [DATEBASE_NAME].[SCHEMA].[DESTINATION_NAME] d ON s.fldRowID = d.fldRowID
-                WHERE s.fldLastUpdate > @LastSyncDate AND d.fldRowID IS NULL
+                    LEFT JOIN [{{xSettings.TargetDatabaseName}}].[{{xSettings.TargetSchemaName}}].[{{xSettings.TargetTablePrefix}}{{Name}}] d ON s.fldRowID = d.fldRowID
+				WHERE AND d.fldRowID IS NULL
+                --WHERE s.[{{xSettings.LastSyncDateColumnName}}] > @LastSyncDate -- Not needed for inserts
 .
 .
-	-- UPDATE DATA IN [DATEBASE_NAME].[SCHEMA].[DESTINATION_NAME] WHERE PRIMARY KEY VALUES MATCH
-    UPDATE [DATEBASE_NAME].[SCHEMA].[DESTINATION_NAME]
+	-- UPDATE DATA IN [{{xSettings.TargetServerName}}].[{{xSettings.TargetDatabaseName}}].[{{xSettings.TargetSchemaName}}].[{{xSettings.TargetTablePrefix}}{{Name}}] WHERE PRIMARY KEY VALUES MATCH
+    UPDATE [{{xSettings.TargetServerName}}].[{{xSettings.TargetDatabaseName}}].[{{xSettings.TargetSchemaName}}].[{{xSettings.TargetTablePrefix}}{{Name}}]
     SET
         {{#each Columns}}[{{Name}}] = s.[{{Name}}]{{xNotLast ", "}}
         {{/each}}
-    FROM [DATEBASE_NAME].[SCHEMA].[DESTINATION_NAME] d 
+    FROM [{{xSettings.TargetServerName}}].[{{xSettings.TargetDatabaseName}}].[{{xSettings.TargetSchemaName}}].[{{xSettings.TargetTablePrefix}}{{Name}}] d 
         INNER JOIN [{{Database.Name}}].[{{Schema}}].[{{Name}}] s
             ON d.fldRowID = s.fldRowID
-    WHERE s.fldLastUpdate > @LastSyncDate
+    WHERE s.[{{xSettings.LastSyncDateColumnName}}] > @LastSyncDate
 .
 .
-	-- DELETE DATA FROM [DATEBASE_NAME].[SCHEMA].[DESTINATION_NAME] WHERE PRIMARY KEY VALUE DOES NOT EXIST IN SOURCE TABLE
-    DELETE FROM [DATEBASE_NAME].[SCHEMA].[DESTINATION_NAME]
+	-- DELETE DATA FROM [{{xSettings.TargetServerName}}].[{{xSettings.TargetDatabaseName}}].[{{xSettings.TargetSchemaName}}].[{{xSettings.TargetTablePrefix}}{{Name}}] WHERE PRIMARY KEY VALUE DOES NOT EXIST IN SOURCE TABLE
+    DELETE FROM [{{xSettings.TargetServerName}}].[{{xSettings.TargetDatabaseName}}].[{{xSettings.TargetSchemaName}}].[{{xSettings.TargetTablePrefix}}{{Name}}]
     WHERE fldRowID IN (
         SELECT d.fldRowID
         FROM [{{Database.Name}}].[{{Schema}}].[{{Name}}] s 
-            RIGHT JOIN [DATEBASE_NAME].[SCHEMA].[DESTINATION_NAME] d ON s.fldRowID = d.fldRowID
+            RIGHT JOIN [{{xSettings.TargetServerName}}].[{{xSettings.TargetDatabaseName}}].[{{xSettings.TargetSchemaName}}].[{{xSettings.TargetTablePrefix}}{{Name}}] d ON s.fldRowID = d.fldRowID
         WHERE s.fldRowID IS NULL
     )
 .
@@ -66,10 +70,38 @@ BEGIN
     UPDATE tblLastTableSyncDate
         SET fldLastSyncDate = GETDATE()
         WHERE fldSourceTableName = '{{Name}}';
-    {{/each}}
 .
 .
 	--SELECT * FROM tblLastTableSyncDate;
-	--SELECT * FROM [DATEBASE_NAME].[SCHEMA].[DESTINATION_NAME]
+	--SELECT * FROM [{{xSettings.TargetServerName}}].[{{xSettings.TargetDatabaseName}}].[{{xSettings.TargetSchemaName}}].[{{xSettings.TargetTablePrefix}}{{Name}}]
 END
 GO
+.
+.
+{{/each}}
+.
+.
+IF EXISTS (SELECT * FROM sys.objects WHERE object_id = OBJECT_ID(N'[dbo].[spPushPM2Connect]') AND type in (N'P', N'PC'))
+DROP PROCEDURE [dbo].[spPushPM2Connect]
+GO
+.
+CREATE PROCEDURE spPushPM2Connect
+AS
+BEGIN
+{{#each Items}}	
+	EXEC spPushPM2Connect_{{Name}}
+{{/each}}
+END
+GO
+.
+--Remove associated LastSyncTable rows for the recreated tables
+{{#each Items}}	
+DELETE FROM [{{xSettings.LastSyncTableName}}] WHERE fldSourceTableName = '{{Name}}';
+{{/each}}
+GO
+.
+--Execute the parent stored procedure
+EXEC spPushPM2Connect
+GO
+.
+{{xFile xSettings.OutputFile path=xSettings.OutputPath prefix="" suffix="" ext="sql"}}
