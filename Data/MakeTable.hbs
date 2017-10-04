@@ -28,7 +28,7 @@ GO
 .
 --CREATE TABLE
 CREATE TABLE [{{xSettings.TargetSchemaName}}].[{{xSettings.TargetTablePrefix}}{{Name}}](
-	{{#each Columns}}[{{Name}}] [{{DataTypeNameComplete}}] {{#xIf IsNullable "===" true}}NULL{{else}}NOT NULL{{/xIf}} {{xNotLast ","}}
+	{{#each Columns}}[{{Name}}] {{DataTypeNameComplete}} {{#xIf IsNullable "===" true}}NULL{{else}}NOT NULL{{/xIf}} {{xNotLast ","}}
 	{{/each}});
 GO
 .
