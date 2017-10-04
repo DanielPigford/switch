@@ -3,21 +3,41 @@
 -- Description  - Template to generate a SQL Server MakeTable from View script similar to MSAccess MakeTable
 --
 
---CREATE TABLE
-{{#each Items}}	
-DROP TABLE [DATABASE_NAME].[SCHEMA].[tbl{{Name}}]
-GO
-CREATE TABLE [DATABASE_NAME].[SCHEMA].[tbl{{Name}}](
-	{{#each Columns}}[{{Name}}] [{{DataTypeNameComplete}}] {{#xIf IsNullable "===" true}}NULL{{else}}NOT NULL{{/xIf}} {{xNotLast ","}}
-	{{/each}})
-GO
-{{/each}}
+{{!===============================================================}}
+{{! {                                                             }}
+{{!  "OutputPath": "C:\\M2G\\switch\\",                           }}
+{{!  "TargetServerName": "EXNJCU01008.EXUS01.NET",                }}
+{{!  "TargetDatabaseName": "EDAProjectManagement",                }}
+{{!  "TargetSchemaName": "wrk",                                   }}
+{{!  "TargetTablePrefix": "tbl"                                   }}
+{{! }                                                             }}
+{{!===============================================================}}
 
---INSERT TABLE
-{{#each Items}}			
-INSERT INTO [DATEBASE_NAME].[SCHEMA].[DESTINATION_NAME]
+.
+{{#each Items}}	
+USE [{{xSettings.TargetDatabaseName}}]
+GO
+.
+--DROP TABLE
+BEGIN TRY
+DROP TABLE [{{xSettings.TargetSchemaName}}].[{{xSettings.TargetTablePrefix}}{{Name}}];
+END TRY
+BEGIN CATCH
+END CATCH
+GO
+.
+--CREATE TABLE
+CREATE TABLE [{{xSettings.TargetSchemaName}}].[{{xSettings.TargetTablePrefix}}{{Name}}](
+	{{#each Columns}}[{{Name}}] [{{DataTypeNameComplete}}] {{#xIf IsNullable "===" true}}NULL{{else}}NOT NULL{{/xIf}} {{xNotLast ","}}
+	{{/each}});
+GO
+.
+--INSERT TABLE DATA		
+INSERT INTO [{{xSettings.TargetSchemaName}}].[{{xSettings.TargetTablePrefix}}{{Name}}]
 		   ({{#each Columns}}{{xNotFirst ", "}}[{{Name}}]{{/each}})
 		SELECT {{#each Columns}}{{xNotFirst ", "}}s.[{{Name}}]{{/each}}
-			FROM [{{Database.Name}}].[{{Schema}}].[{{Name}}] s 
-{{/each}}
+			FROM [{{Database.Name}}].[{{Schema}}].[{{Name}}] s; 
 GO
+.
+{{/each}}
+
