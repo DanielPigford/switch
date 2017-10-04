@@ -53,7 +53,7 @@ BEGIN
             ({{#each Columns}}{{xNotFirst ", "}}[{{Name}}]{{/each}})
             SELECT {{#each Columns}}{{xNotFirst ", "}}s.[{{Name}}]{{/each}}
                 FROM [{{Database.Name}}].[{{Schema}}].[{{Name}}] s 
-                    LEFT JOIN [{{xSettings.TargetDatabaseName}}].[{{xSettings.TargetSchemaName}}].[{{xSettings.TargetTablePrefix}}{{Name}}] d ON s.fldRowID = d.fldRowID
+                    LEFT JOIN [{{xSettings.TargetServerName}}].[{{xSettings.TargetDatabaseName}}].[{{xSettings.TargetSchemaName}}].[{{xSettings.TargetTablePrefix}}{{Name}}] d ON s.fldRowID = d.fldRowID
 				WHERE d.RowID IS NULL
 .
 .
