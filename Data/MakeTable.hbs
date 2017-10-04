@@ -18,6 +18,15 @@
 USE [{{xSettings.TargetDatabaseName}}]
 GO
 .
+--CREATE TARGET SCHEMA
+IF NOT EXISTS (
+	SELECT  schema_name
+	FROM    information_schema.schemata
+	WHERE   schema_name = '{{xSettings.TargetSchemaName}}' ) 
+BEGIN
+	EXEC sp_executesql N'CREATE SCHEMA [{{xSettings.TargetSchemaName}}]'
+END
+.
 --DROP TABLE
 BEGIN TRY
 DROP TABLE [{{xSettings.TargetSchemaName}}].[{{xSettings.TargetTablePrefix}}{{Name}}];
