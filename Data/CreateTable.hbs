@@ -6,9 +6,10 @@
 {{!===============================================================}}
 {{! {                                                             }}
 {{!  "OutputPath": "C:\\M2G\\switch\\",                           }}
+{{!  "OutputFile": "BuildFlatTables",                             }}
 {{!  "TargetDatabaseName": "EDAProjectManagement",                }}
-{{!  "TargetSchemaName": "dbo",                                    }}
-{{!  "TargetTablePrefix": "tbl"                                    }}
+{{!  "TargetSchemaName": "dbo",                                   }}
+{{!  "TargetTablePrefix": "tbl"                                   }}
 {{! }                                                             }}
 {{!===============================================================}}
 
@@ -47,4 +48,5 @@ AS
 .
 .
 {{/each}}
+{{xFile xSettings.OutputFile path=xSettings.OutputPath prefix="" suffix="" ext="sql"}}
 
