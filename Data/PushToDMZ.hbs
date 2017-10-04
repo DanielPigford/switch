@@ -3,6 +3,20 @@
 -- Description  - Template to generate a SQL Server one way script to push table data to DMZ.
 --
 .
+{{!===============================================================}}
+{{! {                                                             }}
+{{!     "OutputPath": "C:\\M2G\\switch\\",                        }}
+{{!     "OutputFile": "PushToDMZ",                                }}
+{{!     "TargetServerName": "EXNJCU01008.EXUS01.NET",             }}
+{{!     "TargetDatabaseName": "EDAProjectManagement",             }}
+{{!     "TargetSchemaName": "dbo",                                }}
+{{!     "TargetTablePrefix": "tbl",                               }}
+{{! 	"LastSyncTableName": "tblLastTableSyncDate",              }}
+{{! 	"LastSyncDateColumnName": "fldLastUpdate"                 }}
+{{! }                                                             }}
+{{!===============================================================}}
+.
+.
 USE [{{xRoot.Items.[0].Database.Name}}]
 GO
 .
