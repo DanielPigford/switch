@@ -20,31 +20,31 @@ GO
 .
 --DROP TABLE
 BEGIN TRY
-DROP TABLE [{{xSettings.TargetSchemaName}}].[{{xSettings.TargetTablePrefix}}{{Name}}];
+DROP TABLE [{{Schema}}].[{{xSettings.TargetTablePrefix}}{{Name}}];
 END TRY
 BEGIN CATCH
 END CATCH
 GO
 .
 --CREATE TABLE
-CREATE TABLE [{{xSettings.TargetSchemaName}}].[{{xSettings.TargetTablePrefix}}{{Name}}](
+CREATE TABLE [{{Schema}}].[{{xSettings.TargetTablePrefix}}{{Name}}](
 	{{#each Columns}}[{{Name}}] {{DataTypeNameComplete}} {{#xIf IsNullable "===" true}}NULL{{else}}NOT NULL{{/xIf}} {{xNotLast ","}}
 	{{/each}});
 GO
 .
 --DROP VIEW
 BEGIN TRY
-DROP VIEW [{{xSettings.TargetSchemaName}}].[{{Name}}];
+DROP VIEW [{{Schema}}].[{{Name}}];
 END TRY
 BEGIN CATCH
 END CATCH
 GO
 .
 --CREATE VIEW
-CREATE VIEW [{{xSettings.TargetSchemaName}}].[{{Name}}]
+CREATE VIEW [{{Schema}}].[{{Name}}]
 AS
 	SELECT {{#each Columns}}{{xNotFirst ", "}}[{{Name}}]{{/each}}
-		FROM [{{xSettings.TargetSchemaName}}].[{{xSettings.TargetTablePrefix}}{{Name}}]; 
+		FROM [{{Schema}}].[{{xSettings.TargetTablePrefix}}{{Name}}]; 
 GO
 .
 .
