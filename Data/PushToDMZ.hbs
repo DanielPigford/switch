@@ -50,11 +50,11 @@ BEGIN
 .
 	-- INSERT DATA INTO [{{xSettings.TargetServerName}}].[{{xSettings.TargetDatabaseName}}].[{{xSettings.TargetSchemaName}}].[{{xSettings.TargetTablePrefix}}{{Name}}] WHERE PRIMARY KEY VALUES DO NOT ALREADY EXIST.
     INSERT INTO [{{xSettings.TargetServerName}}].[{{xSettings.TargetDatabaseName}}].[{{xSettings.TargetSchemaName}}].[{{xSettings.TargetTablePrefix}}{{Name}}]
-            ({{#each Columns}}{{xNotFirst ", "}}[{{Name}}]{{/each}})
-            SELECT {{#each Columns}}{{xNotFirst ", "}}s.[{{Name}}]{{/each}}
-                FROM [{{Database.Name}}].[{{Schema}}].[{{Name}}] s 
-                    LEFT JOIN [{{xSettings.TargetServerName}}].[{{xSettings.TargetDatabaseName}}].[{{xSettings.TargetSchemaName}}].[{{xSettings.TargetTablePrefix}}{{Name}}] d ON s.fldRowID = d.fldRowID
-				WHERE d.RowID IS NULL
+        ({{#each Columns}}{{xNotFirst ", "}}[{{Name}}]{{/each}})
+        SELECT {{#each Columns}}{{xNotFirst ", "}}s.[{{Name}}]{{/each}}
+            FROM [{{Database.Name}}].[{{Schema}}].[{{Name}}] s 
+                LEFT JOIN [{{xSettings.TargetServerName}}].[{{xSettings.TargetDatabaseName}}].[{{xSettings.TargetSchemaName}}].[{{xSettings.TargetTablePrefix}}{{Name}}] d ON s.RowId = d.RowId
+			WHERE d.RowID IS NULL
 .
 .
 	-- UPDATE DATA IN [{{xSettings.TargetServerName}}].[{{xSettings.TargetDatabaseName}}].[{{xSettings.TargetSchemaName}}].[{{xSettings.TargetTablePrefix}}{{Name}}] WHERE PRIMARY KEY VALUES MATCH
@@ -73,7 +73,7 @@ BEGIN
     WHERE RowID IN (
         SELECT d.RowID
         FROM [{{Database.Name}}].[{{Schema}}].[{{Name}}] s 
-            RIGHT JOIN [{{xSettings.TargetServerName}}].[{{xSettings.TargetDatabaseName}}].[{{xSettings.TargetSchemaName}}].[{{xSettings.TargetTablePrefix}}{{Name}}] d ON s.fldRowID = d.fldRowID
+            RIGHT JOIN [{{xSettings.TargetServerName}}].[{{xSettings.TargetDatabaseName}}].[{{xSettings.TargetSchemaName}}].[{{xSettings.TargetTablePrefix}}{{Name}}] d ON s.RowId = d.RowId
         WHERE s.RowID IS NULL
     )
 .
