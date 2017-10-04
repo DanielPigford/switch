@@ -13,10 +13,10 @@
 {{! }                                                             }}
 {{!===============================================================}}
 
-.
-{{#each Items}}	
 USE [{{xSettings.TargetDatabaseName}}]
 GO
+.
+{{#each Items}}	
 .
 --DROP TABLE
 BEGIN TRY
@@ -45,6 +45,7 @@ CREATE VIEW [{{xSettings.TargetSchemaName}}].[{{Name}}]
 AS
 	SELECT {{#each Columns}}{{xNotFirst ", "}}[{{Name}}]{{/each}}
 		FROM [{{Database.Name}}].[{{Schema}}].[{{xSettings.TargetTablePrefix}}{{Name}}]; 
+GO
 .
 .
 {{/each}}
