@@ -44,7 +44,7 @@ GO
 CREATE VIEW [{{xSettings.TargetSchemaName}}].[{{Name}}]
 AS
 	SELECT {{#each Columns}}{{xNotFirst ", "}}[{{Name}}]{{/each}}
-		FROM [{{Database.Name}}].[{{Schema}}].[{{xSettings.TargetTablePrefix}}{{Name}}]; 
+		FROM [{{Database.Name}}].[{{xSettings.TargetSchemaName}}].[{{xSettings.TargetTablePrefix}}{{Name}}]; 
 GO
 .
 .
