@@ -1,0 +1,59 @@
+-- switch       - AuditTriggerTLOG
+-- https://bitbucket.org/codeasaurus/switch
+-- Description  - Template to generate a SQL Server trigger that populates a TLOG table from the detail audit log.
+--
+
+{{!===============================================================}}
+{{! {                                                             }}
+{{!  "OutputPath": "C:\\M2G\\switch\\",                           }}
+{{!  "OutputFile": "BuildTLOGTriggers",                           }}
+{{!  "LastUpdateByColumnName": "fldLastUpdateById"                }}
+{{! }                                                             }}
+{{!===============================================================}}
+
+.
+USE [{{xRoot.Items.[0].Database.Name}}]
+GO
+.
+SET ANSI_NULLS ON
+GO
+.
+SET QUOTED_IDENTIFIER ON
+GO
+.
+{{#each Items}}	
+IF  EXISTS (SELECT * FROM sys.objects WHERE object_id = OBJECT_ID(N'[{{Schema}}].[trig_i_{{Name}}]') AND type in (N'TR'))
+	DROP TRIGGER [{{Schema}}].[trig_i_{{Name}}]; 
+GO
+CREATE TRIGGER [{{Schema}}].[trig_i_{{Name}}] 
+   ON  [{{Schema}}].[{{Name}}] 
+   AFTER INSERT
+AS 
+BEGIN
+.
+	DECLARE @UserId NVARCHAR(20)
+.
+	--Read user from fldNewValue on the matching fldField = 'fldLastUpdateBy' rowset in AuditLog table from inserted
+	SELECT TOP 1 @UserId = fldNewValue
+	FROM inserted  
+	WHERE fldField = '{{xSettings.LastUpdateByColumnName}}'
+	ORDER BY fldId DESC
+.
+	INSERT INTO tblTLog (fldUser, fldTable, fldField, fldOldValue, fldNewValue, fldUpdated, fldTime, fldRecId, fldSourceApp)
+	SELECT 
+	CASE 
+		WHEN fldSourceApp LIKE 'Microsoft%' THEN fldSQLUser
+		ELSE @UserId
+	END, 
+	fldTableName, fldField, fldOldValue, fldNewValue, CONVERT(Date, fldDateTime), CONVERT(Time, fldDateTime), fldKeyId, fldSourceApp
+	FROM inserted l1 
+		LEFT JOIN tblTLogExclude x1 ON l1.fldTableName = x1.fldExcludeTableName AND l1.fldField = x1.fldExcludeField
+	WHERE l1.fldAction = 'Update'	
+	AND x1.fldId IS NULL
+	AND COALESCE(l1.fldNewValue,'') <> COALESCE(l1.fldOldValue,'')
+.
+END
+GO
+.
+{{/each}}
+{{xFile xSettings.OutputFile path=xSettings.OutputPath prefix="" suffix="" ext="sql"}}
