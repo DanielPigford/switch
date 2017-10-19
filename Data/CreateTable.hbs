@@ -9,7 +9,8 @@
 {{!  "OutputFile": "BuildFlatTables",                             }}
 {{!  "TargetDatabaseName": "EDAProjectManagement",                }}
 {{!  "TargetSchemaName": "dbo",                                   }}
-{{!  "TargetTablePrefix": "tbl"                                   }}
+{{!  "TargetTablePrefix": "tbl",                                  }}
+{{!  "PrimaryKeyColumnName": "RowID"                              }}
 {{! }                                                             }}
 {{!===============================================================}}
 
@@ -28,7 +29,7 @@ GO
 .
 --CREATE TABLE
 CREATE TABLE [{{Schema}}].[{{xSettings.TargetTablePrefix}}{{Name}}](
-	{{#each Columns}}[{{Name}}] {{DataTypeNameComplete}} {{#xIf IsNullable "===" true}}NULL{{else}}NOT NULL{{/xIf}} {{xNotLast ","}}
+	{{#each Columns}}[{{Name}}] {{DataTypeNameComplete}} {{#xIf IsAutoKey "===" true}}Identity(1,1) {{else}}{{/xIf}}{{#xIf Name "===" xSettings.PrimaryKeyColumnName}}Primary Key NOT NULL{{else}}{{#xIf IsNullable "===" true}}NULL{{else}}NOT NULL{{/xIf}} {{/xIf}} {{xNotLast ","}}
 	{{/each}});
 GO
 .
@@ -50,4 +51,3 @@ GO
 .
 {{/each}}
 {{xFile xSettings.OutputFile path=xSettings.OutputPath prefix="" suffix="" ext="sql"}}
-
