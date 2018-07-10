@@ -1,0 +1,53 @@
+CREATE PROCEDURE spApproveAccount 
+	-- Add the parameters for the stored procedure here
+	@pAccountGuid nvarchar(40),
+	@ApprovedById nvarchar(50),
+	@ApprovedBy nvarchar(50)
+AS
+BEGIN
+	BEGIN TRANSACTION
+		BEGIN TRY
+		{{#each Items}}
+		--Insert record into {{Name}} from {{Name}}Pending
+		INSERT INTO [EDAAccountManagement].[dbo].[{{Name}}](
+		{{#each Columns}}
+		{{#xIfNotAny IsAutoKey "===" true}}
+			[{{Name}}]{{#xNotLast}},{{/xNotLast}}{{#xLast}}){{/xLast}}
+		{{/xIfNotAny}}
+		{{/each}}
+		SELECT 
+		{{#each Columns}}
+		{{#xIfNotAny IsAutoKey "===" true}}
+			[{{Name}}]{{#xNotLast}},{{/xNotLast}}
+		{{/xIfNotAny}}
+		{{/each}}
+		FROM [EDAAccountManagement].[dbo].[{{Name}}Pending]
+		WHERE GUID_FIELD_GOES_HERE = @pAccountGuid;
+		.
+		--Delete record from {{Name}}Pending
+		DELETE FROM [EDAAccountManagement].[dbo].[{{Name}}Pending]
+		WHERE GUID_FIELD_GOES_HERE = @pAccountGuid;
+		.
+	{{/each}}
+		.
+		UPDATE [EDAAccountManagement].[dbo].[tblAMAccountSpecificSetup]
+		SET [fldApprovedBy] = @ApprovedBy,
+			[fldApprovedByID] = @ApprovedById,
+			[fldApprovedDate] = GETDATE()
+		WHERE fldGUID = @pAccountGuid;
+		.
+		UPDATE [EDAAccountManagement].[dbo].[tblAMPracticeSpecificSetup]
+		SET [fldApprovedBy] = @ApprovedBy,
+			[fldApprovedByID] = @ApprovedById,
+			[fldApprovedDate] = GETDATE()
+		WHERE fldAccountGUID = @pAccountGuid;
+		.
+	END TRY
+	BEGIN CATCH
+		--Throw custom error
+		ROLLBACK TRANSACTION
+	END CATCH
+	ROLLBACK TRANSACTION
+	END
+GO
+.

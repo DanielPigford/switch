@@ -1,0 +1,39 @@
+USE [EDAAccountManagement]
+GO
+{{#each Items}}
+IF  EXISTS (SELECT * FROM sys.triggers WHERE object_id = OBJECT_ID(N'[dbo].[trg_iud_{{Name}}]'))
+DROP TRIGGER [dbo].[trg_iud_{{Name}}]
+GO
+
+CREATE TRIGGER [dbo].[trg_iud_{{Name}}]
+  ON [dbo].[{{Name}}]
+ FOR INSERT, UPDATE, DELETE
+  AS
+   BEGIN
+		INSERT INTO [{{Name}}Historical](
+			{{#each Columns}}
+            {{#xIfNotAny IsAutoKey "===" true}}
+			[{{Name}}],
+            {{/xIfNotAny}}
+			{{/each}}
+			[fldHistoricalDate],
+			[fldHistoricalBy],
+			[fldHistoricalByID]
+			)
+		SELECT 
+			{{#each Columns}}
+            {{#xIfNotAny IsAutoKey "===" true}}
+			t1.[{{Name}}],
+            {{/xIfNotAny}}
+			{{/each}}
+			GETDATE(),
+			'Trigger',
+			'System'
+		FROM [{{Name}}] t1
+			INNER JOIN inserted i ON t1.fldGUID = i.fldGUID
+		
+END
+
+{{/each}}
+
+GO
