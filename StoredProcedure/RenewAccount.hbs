@@ -1,3 +1,13 @@
+-- switch       - Renew Account Procedure
+-- https://github.com/DanielPigford/switch
+-- Description  - Template to generate a SQL Server Renew Account procedure for EDA.AM
+--
+
+{{!===============================================================}}
+{{! {                                                             }}
+{{! }                                                             }}
+{{!===============================================================}}
+.
 CREATE PROCEDURE spRenewAccount 
 	-- Add the parameters for the stored procedure here
 	@pAccountGuid nvarchar(40),
@@ -5,11 +15,19 @@ CREATE PROCEDURE spRenewAccount
 	@RenewalBy nvarchar(50)
 AS
 BEGIN
+	DECLARE @Debug BIT = 0
 	BEGIN TRANSACTION
 		BEGIN TRY
+		IF @Debug = 1
+			BEGIN
+				{{#each Items}}
+				SELECT '[{{Name}}Pending]' AS 'TableName', * FROM [{{Name}}Pending] WHERE fldGUID = @pAccountGuid;
+				{{/each}}
+			END
+.
 		{{#each Items}}
 			--Insert record into {{Name}}Pending from {{Name}}
-			INSERT INTO [EDAAccountManagement].[dbo].[{{Name}}Pending](
+			INSERT INTO [{{Name}}Pending](
 			{{#each Columns}}
 			{{#xIfNotAny IsAutoKey "===" true}}
 				[{{Name}}]{{#xNotLast}},{{/xNotLast}}{{#xLast}}){{/xLast}}
@@ -21,33 +39,54 @@ BEGIN
 				[{{Name}}]{{#xNotLast}},{{/xNotLast}}
 			{{/xIfNotAny}}
 			{{/each}}
-			FROM [EDAAccountManagement].[dbo].[{{Name}}]
-			WHERE GUID_FIELD_GOES_HERE = @pAccountGuid;
-.
-			--Delete record from {{Name}}
-			DELETE FROM [EDAAccountManagement].[dbo].[{{Name}}]
+			FROM [{{Name}}]
 			WHERE GUID_FIELD_GOES_HERE = @pAccountGuid;
 .
 		{{/each}}
 .
-			UPDATE [EDAAccountManagement].[dbo].[tblAMAccountSpecificSetup]
+			UPDATE [tblAMAccountSpecificSetup]
 			SET [fldRenewedBy] = @RenewalBy,
 				[fldRenewedByID] = @RenewalId,
 				[fldRenewedDate] = GETDATE()
 			WHERE fldGUID = @pAccountGuid;
 .
-			UPDATE [EDAAccountManagement].[dbo].[tblAMPracticeSpecificSetup]
+			UPDATE [tblAMPracticeSpecificSetup]
 			SET [fldRenewedBy] = @RenewalBy,
 				[fldRenewedByID] = @RenewalId,
 				[fldRenewedDate] = GETDATE()
 			WHERE fldAccountGUID = @pAccountGuid;
 .
-		END TRY
-		BEGIN CATCH
-			--Throw custom error
-			ROLLBACK TRANSACTION
-		END CATCH
-	ROLLBACK TRANSACTION
-	END
+		{{#each Items}}
+		--Delete record from {{Name}}
+		DELETE FROM [{{Name}}]
+		WHERE GUID_FIELD_GOES_HERE = @pAccountGuid;
+.
+		{{/each}}
+
+		IF @Debug = 1
+			BEGIN
+				{{#each Items}}
+				SELECT '[{{Name}}Pending]' AS 'TableName', * FROM [{{Name}}Pending] WHERE fldGUID = @pAccountGuid;
+				{{/each}}
+			END
+	END TRY
+	BEGIN CATCH
+		ROLLBACK TRANSACTION
+.
+	    DECLARE @ErrorMessage NVARCHAR(4000);  
+		DECLARE @ErrorSeverity INT;  
+		DECLARE @ErrorState INT;  
+.
+		SELECT   
+			@ErrorMessage = ERROR_MESSAGE(),  
+			@ErrorSeverity = ERROR_SEVERITY(),  
+			@ErrorState = ERROR_STATE();  
+.
+		RAISERROR (@ErrorMessage, -- Message text.  
+				   @ErrorSeverity, -- Severity.  
+				   @ErrorState -- State.  
+				   );  		
+	END CATCH
+END
 GO
 .
