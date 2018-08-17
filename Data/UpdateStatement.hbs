@@ -1,0 +1,22 @@
+-- switch       - Update Statement
+-- https://github.com/DanielPigford/switch
+-- Description  - Template to generate a SQL Server update statement for retoring data
+--
+.
+{{!===============================================================}}
+{{! {                                                             }}
+{{! }                                                             }}
+{{!===============================================================}}
+.
+.
+{{#each Items}}
+UPDATE {{Name}}
+	SET
+{{#each Columns}}
+	{{#xIfNotAny IsComputed IsConcurrency IsAutoKey "===" true}}
+		{{xHashtable "Comma"}}[{{Name}}] = b1.[{{Name}}]{{xHashtable "Comma" ","}}
+	{{/xIfNotAny}}
+{{/each}}{{xHashtable}}
+	FROM {{Name}} t1
+		INNER JOIN {{Name}}_Backup t2 ON {{#each PrimaryKeys}}a1.[{{Name}}] = b1.[{{Name}}]{{/each}}
+{{/each}}
