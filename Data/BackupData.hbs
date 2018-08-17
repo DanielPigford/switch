@@ -1,0 +1,73 @@
+-- switch       - BackupD Data
+-- https://github.com/DanielPigford/switch
+-- Description  - Template to generate a SQL Server backup script statement for duplicating data into a backup table.
+--
+.
+{{!===============================================================}}
+{{! {                                                             }}
+{{! }                                                             }}
+{{!===============================================================}}
+.
+.
+USE EDAAccountManagement
+GO
+.
+-- Attention please adjust variable assignment on line below as desired.  The two values are: 'false' and 'true'
+--DECLARE @CommitTransaction NVARCHAR(5) = 'true'
+.
+SET ANSI_NULLS ON
+SET QUOTED_IDENTIFIER ON
+.
+--BEGIN TRANSACTION
+.
+{{#each Items}}
+IF  EXISTS (SELECT * FROM sys.objects WHERE object_id = OBJECT_ID(N'[dbo].[{{Name}}_Backup]') AND type in (N'U'))
+	DROP TABLE [dbo].[{{Name}}_Backup]
+.
+CREATE TABLE [dbo].[{{Name}}_Backup](
+{{#each Columns}}
+		[{{Name}}] {{DataTypeNameComplete}} {{#xIfAny IsAutoKey "===" true}}IDENTITY({{AutoKeySeed}},{{AutoKeyIncrement}}) {{/xIfAny}}{{#xIfNotAny IsNullable "===" true}}NOT {{/xIfNotAny}}NULL,
+{{/each}}
+ CONSTRAINT [PK_{{Name}}_Backup_{{#each PrimaryKeys}}{{Name}}{{/each}}] PRIMARY KEY NONCLUSTERED 
+(
+	{{#each PrimaryKeys}}[{{Name}}]{{/each}} ASC
+)WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON) ON [PRIMARY]
+) ON [PRIMARY]
+GO
+.
+{{/each}}
+.
+--Backup custom data
+{{#each Items}}
+INSERT INTO [{{Name}}_Backup]
+	(
+	{{#each Columns}}
+	{{#xIfNotAny IsComputed IsConcurrency IsAutoKey "===" true}}
+		{{xHashtable "Comma"}}[{{Name}}]{{xHashtable "Comma" ","}}
+	{{/xIfNotAny}}
+	{{/each}}{{xHashtable}}
+	)
+SELECT 
+	{{#each Columns}}
+	{{#xIfNotAny IsComputed IsConcurrency IsAutoKey "===" true}}
+		{{xHashtable "Comma"}}[{{Name}}]{{xHashtable "Comma" ","}}
+	{{/xIfNotAny}}
+	{{/each}}{{xHashtable}}
+  FROM [{{Name}}]
+	WHERE fldLastUpdateBy <> 'Script'
+	OR fldCreateBy <> 'Script'
+.
+{{/each}}
+.
+--IF (@CommitTransaction = 'true')
+--	BEGIN
+--		COMMIT TRANSACTION;
+--		PRINT 'Transaction committed';
+--	END
+--ELSE
+--	BEGIN
+--		ROLLBACK TRANSACTION;
+--		PRINT 'Transaction rolled back';
+--	END
+.
+GO

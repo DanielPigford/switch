@@ -14,9 +14,11 @@ UPDATE {{Name}}
 	SET
 {{#each Columns}}
 	{{#xIfNotAny IsComputed IsConcurrency IsAutoKey "===" true}}
-		{{xHashtable "Comma"}}[{{Name}}] = b1.[{{Name}}]{{xHashtable "Comma" ","}}
+		{{xHashtable "Comma"}}[{{Name}}] = t2.[{{Name}}]{{xHashtable "Comma" ","}}
 	{{/xIfNotAny}}
 {{/each}}{{xHashtable}}
 	FROM {{Name}} t1
-		INNER JOIN {{Name}}_Backup t2 ON {{#each PrimaryKeys}}a1.[{{Name}}] = b1.[{{Name}}]{{/each}}
+		INNER JOIN {{Name}}_Backup t2 ON {{#each PrimaryKeys}}t1.[{{Name}}] = t2.[{{Name}}]{{/each}}
+.
 {{/each}}
+.
