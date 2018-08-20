@@ -1,0 +1,30 @@
+-- switch       - Insert Statement
+-- https://github.com/DanielPigford/switch
+-- Description  - Template to generate a SQL Server insert statement for moving data
+--
+.
+{{!===============================================================}}
+{{! {                                                             }}
+{{! }                                                             }}
+{{!===============================================================}}
+.
+.
+{{#each Items}}
+INSERT INTO [{{Name}}_Pending]
+	(
+	{{#each Columns}}
+	{{#xIfNotAny IsComputed IsConcurrency IsAutoKey "===" true}}
+		{{xHashtable "Comma"}}[{{Name}}]{{xHashtable "Comma" ","}}
+	{{/xIfNotAny}}
+	{{/each}}{{xHashtable}}
+	)
+SELECT 
+	{{#each Columns}}
+	{{#xIfNotAny IsComputed IsConcurrency IsAutoKey "===" true}}
+		{{xHashtable "Comma"}}[{{Name}}]{{xHashtable "Comma" ","}}
+	{{/xIfNotAny}}
+	{{/each}}{{xHashtable}}
+  FROM [{{Name}}]
+	WHERE fldGUID = @AccountGUID
+.
+{{/each}}
