@@ -1,0 +1,16 @@
+-- switch       - Horizontal Column Comma list
+-- https://github.com/DanielPigford/switch
+-- Description  - Template to generate a SQL Server column name list comma separated on one line
+--
+.
+{{!===============================================================}}
+{{! {                                                             }}
+{{! }                                                             }}
+{{!===============================================================}}
+.
+.
+{{#each Items}}
+--{{Name}}
+--{{#each Columns}}{{#xIfNotAny IsComputed IsConcurrency IsAutoKey "===" true}}{{xHashtable "Comma"}}[{{Name}}]{{xHashtable "Comma" ", "}}{{/xIfNotAny}}{{/each}}{{xHashtable}}
+.
+{{/each}}
